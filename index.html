@@ -338,7 +338,7 @@ window.openBooklet = async function(id) {
   try { await updateDoc(doc(db,'booklets',id), { views: (b.views||0)+1 }); } catch(e){}
 
   const coverHtml = b.imgUrl
-    ? `<img src="${b.imgUrl}" style="max-width:260px;border-radius:12px;box-shadow:0 8px 32px rgba(0,0,0,0.2);" />`
+    ? `<img src="${b.imgUrl}" style="width:100%;height:100%;object-fit:contain;border-radius:8px;" />`
     : `<div style="font-size:80px;text-align:center;">📄</div>`;
 
   const metaHtml = (settings.showViews||settings.showDownloads) ? `
@@ -346,14 +346,24 @@ window.openBooklet = async function(id) {
     ${settings.showDownloads ? `<div class="meta-item">⬇ ${b.downloads||0} הורדות</div>` : ''}
   ` : '';
 
+  // Cloudinary PDF: convert to viewable URL (fl_attachment for download, /image/upload for view)
+  let pdfViewUrl = b.pdfUrl;
+  let pdfDownloadUrl = b.pdfUrl;
+  if (b.pdfUrl && b.pdfUrl.includes('cloudinary.com')) {
+    // Replace /raw/upload/ or /image/upload/ with viewable version
+    pdfViewUrl = b.pdfUrl.replace('/raw/upload/', '/image/upload/').replace('/upload/', '/upload/');
+    // For download use fl_attachment flag
+    pdfDownloadUrl = b.pdfUrl.replace('/upload/', '/upload/fl_attachment/');
+  }
+
   const pdfSection = b.pdfUrl
-    ? `<iframe src="${b.pdfUrl}" style="width:100%;height:700px;border:none;border-radius:16px;box-shadow:0 4px 24px rgba(0,0,0,0.1);margin-top:24px;"></iframe>`
+    ? `<iframe src="${pdfViewUrl}" style="width:100%;height:700px;border:none;border-radius:16px;box-shadow:0 4px 24px rgba(0,0,0,0.1);margin-top:24px;"></iframe>`
     : `<div style="background:#f4f7fa;border-radius:16px;padding:40px;text-align:center;color:#8fa3b8;margin-top:24px;font-size:15px;">📋 קובץ PDF עדיין לא הועלה לחוברת זו</div>`;
 
   const dlBtn = b.price > 0
     ? `<button onclick="alert('עמוד רכישה בקרוב!')" style="background:#e8c840;color:#1a3a5c;border:none;padding:14px 32px;border-radius:12px;font-size:16px;font-weight:700;cursor:pointer;font-family:Heebo,sans-serif;">💳 רכוש ₪${b.price}</button>`
     : b.pdfUrl
-      ? `<a href="${b.pdfUrl}" download="${b.title}.pdf" style="background:#1a3a5c;color:white;padding:14px 32px;border-radius:12px;font-size:16px;font-weight:700;text-decoration:none;display:inline-block;font-family:Heebo,sans-serif;" onclick="countDownload('${id}')">⬇ הורד חינם</a>`
+      ? `<a href="${pdfDownloadUrl}" target="_blank" style="background:#1a3a5c;color:white;padding:14px 32px;border-radius:12px;font-size:16px;font-weight:700;text-decoration:none;display:inline-block;font-family:Heebo,sans-serif;" onclick="countDownload('${id}')">⬇ הורד חינם</a>`
       : `<span style="background:#e8edf3;color:#8fa3b8;padding:14px 28px;border-radius:12px;font-size:14px;">הורדה אינה זמינה עדיין</span>`;
 
   const win = window.open('', '_blank');
@@ -392,7 +402,8 @@ window.downloadBooklet = async function(id) {
   if (b.price > 0) { showToast('🛒 עמוד רכישה בקרוב'); return; }
   try { await updateDoc(doc(db,'booklets',id), { downloads: (b.downloads||0)+1 }); } catch(e){}
   if (b.pdfUrl) {
-    const a = document.createElement('a'); a.href = b.pdfUrl; a.download = b.title+'.pdf'; a.target='_blank'; a.click();
+    const dlUrl = b.pdfUrl.replace('/upload/', '/upload/fl_attachment/');
+    const a = document.createElement('a'); a.href = dlUrl; a.target='_blank'; a.click();
   } else { showToast('📋 PDF לא הועלה עדיין'); }
 };
 
@@ -688,8 +699,7 @@ window.saveBook = async function() {
     if(pdfFile) {
       showToast('⏳ מעלה PDF...');
       pdfUrl = await uploadToCloudinary(pdfFile, 'pdf-progress', 'pdf-fill', 'raw');
-    }
-    if(imgFile) {
+    }    if(imgFile) {
       showToast('⏳ מעלה תמונה...');
       imgUrl = await uploadToCloudinary(imgFile, 'img-progress', 'img-fill', 'image');
     }
