@@ -347,12 +347,15 @@ window.openBooklet = async function(id) {
   ` : '';
 
   // PDF URLs
-  const pdfViewUrl = b.pdfUrl
-    ? `https://docs.google.com/viewer?url=${encodeURIComponent(b.pdfUrl)}&embedded=true`
-    : null;
-
-  const pdfSection = pdfViewUrl
-    ? `<iframe src="${pdfViewUrl}" style="width:100%;height:700px;border:none;border-radius:16px;box-shadow:0 4px 24px rgba(0,0,0,0.1);margin-top:24px;"></iframe>`
+  const pdfSection = b.pdfUrl
+    ? `<div style="background:#f4f7fa;border-radius:16px;padding:32px;text-align:center;margin-top:24px;">
+        <div style="font-size:48px;margin-bottom:12px;">📄</div>
+        <p style="font-size:15px;color:#3a5068;margin-bottom:20px;">לחץ לפתיחת החוברת</p>
+        <a href="${b.pdfUrl}" target="_blank" onclick="countDownload('${id}')"
+          style="display:inline-block;background:#1a3a5c;color:white;padding:14px 36px;border-radius:12px;font-size:16px;font-weight:700;text-decoration:none;font-family:Heebo,sans-serif;">
+          📖 פתח לצפייה
+        </a>
+      </div>`
     : `<div style="background:#f4f7fa;border-radius:16px;padding:40px;text-align:center;color:#8fa3b8;margin-top:24px;font-size:15px;">📋 קובץ PDF עדיין לא הועלה לחוברת זו</div>`;
 
   const dlBtn = b.price > 0
