@@ -205,8 +205,6 @@ const firebaseConfig = {
 
 const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
-
-const ADMIN_PASS = 'mendi1997';
 let booklets = [];
 let settings = {};
 let activeYear = 'הכל';
@@ -402,16 +400,32 @@ window.closeLogin = function() {
   document.getElementById('login-overlay').style.display = 'none';
   document.getElementById('admin-pass').value = '';
 };
-window.checkLogin = function() {
-  if (document.getElementById('admin-pass').value === ADMIN_PASS) {
-    closeLogin();
-    openAdminPanel();
-  } else {
-    const inp = document.getElementById('admin-pass');
-    inp.style.borderColor = '#ef4444';
-    showToast('❌ סיסמה שגויה');
-    setTimeout(() => inp.style.borderColor = '', 2000);
+window.checkLogin = async function() {
+  const inp = document.getElementById('admin-pass');
+  const entered = inp.value;
+  if (!entered) return;
+
+  const btn = document.querySelector('#login-overlay button');
+  btn.textContent = '...';
+  btn.disabled = true;
+
+  try {
+    const snap = await getDoc(doc(db, 'config', 'admin'));
+    const correct = snap.exists() && snap.data().password === entered;
+    if (correct) {
+      closeLogin();
+      openAdminPanel();
+    } else {
+      inp.style.borderColor = '#ef4444';
+      showToast('❌ סיסמה שגויה');
+      setTimeout(() => inp.style.borderColor = '', 2000);
+    }
+  } catch(e) {
+    showToast('❌ שגיאת חיבור');
   }
+
+  btn.textContent = 'כניסה';
+  btn.disabled = false;
 };
 
 // ===== ADMIN PANEL =====
