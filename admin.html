@@ -1,0 +1,346 @@
+<!DOCTYPE html><html lang="he" dir="rtl"><head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>ניהול – סיכומים במאמרי רבינו</title>
+<link href="https://fonts.googleapis.com/css2?family=Frank+Ruhl+Libre:wght@700;900&family=Heebo:wght@300;400;500;700&display=swap" rel="stylesheet">
+<style>
+*{box-sizing:border-box;margin:0;padding:0}body{font-family:Heebo,sans-serif;background:#d9eef9;color:#1a2e42;direction:rtl}
+header{background:linear-gradient(135deg,#1a2e3f,#243b52);padding:16px 28px;display:flex;align-items:center;justify-content:space-between;color:white}
+.logo{font-family:'Frank Ruhl Libre',serif;font-size:20px;font-weight:900;color:#f5e080}
+.close-btn{background:rgba(255,255,255,0.15);color:white;border:none;padding:8px 18px;border-radius:8px;cursor:pointer;font-family:Heebo,sans-serif;font-size:13px}
+main{max-width:1100px;margin:0 auto;padding:28px 20px}
+.stats-row{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:20px}
+.stat-card{background:white;border-radius:14px;padding:16px;text-align:center;border-top:4px solid #7ec3e8;box-shadow:0 3px 12px rgba(26,58,92,0.08)}
+.stat-card.gold{border-top-color:#e8c840}.stat-card.green{border-top-color:#22c55e}.stat-card.red{border-top-color:#ef4444}
+.stat-num{font-family:'Frank Ruhl Libre',serif;font-size:26px;font-weight:900;color:#1a3a5c;display:block}
+.stat-label{font-size:11px;color:#8fa3b8;margin-top:2px}
+.admin-grid{display:grid;grid-template-columns:1fr 1fr;gap:18px}
+.card{background:white;border-radius:16px;padding:22px;box-shadow:0 3px 12px rgba(26,58,92,0.08)}
+.card h3{font-family:'Frank Ruhl Libre',serif;font-size:17px;font-weight:700;color:#1a3a5c;margin-bottom:14px;padding-bottom:10px;border-bottom:2px solid #d9eef9}
+.fg{margin-bottom:13px}.fg label{display:block;font-size:12px;font-weight:600;color:#1a3a5c;margin-bottom:4px}
+.fg input,.fg textarea,.fg select{width:100%;padding:9px 12px;border-radius:9px;border:2px solid #e8edf3;font-family:Heebo,sans-serif;font-size:13px;direction:rtl;outline:none;background:#f4f7fa;transition:border-color 0.2s}
+.fg input:focus,.fg textarea:focus,.fg select:focus{border-color:#1a3a5c;background:white}
+.fg textarea{resize:vertical;min-height:72px}
+.upload-area{border:2px dashed #7ec3e8;border-radius:10px;padding:16px;text-align:center;cursor:pointer;background:#d9eef9;margin-bottom:12px;transition:all 0.2s}
+.upload-area:hover{border-color:#1a3a5c}
+.btn{padding:10px 20px;border-radius:9px;border:none;font-family:Heebo,sans-serif;font-size:13px;font-weight:600;cursor:pointer;transition:all 0.2s}
+.btn-primary{background:#1a3a5c;color:white}.btn-primary:hover{background:#2a5080}
+.btn-outline{background:white;color:#1a3a5c;border:2px solid #7ec3e8}
+.tbl{width:100%;border-collapse:collapse;font-size:13px}
+.tbl th{background:#1a3a5c;color:white;padding:9px 11px;text-align:right;font-weight:600}
+.tbl th:first-child{border-radius:0 9px 0 0}.tbl th:last-child{border-radius:9px 0 0 0}
+.tbl td{padding:9px 11px;border-bottom:1px solid #e8edf3;color:#3a5068}
+.tbl tr:hover td{background:#f4f7fa}
+.badge{display:inline-block;padding:2px 9px;border-radius:9px;font-size:11px;font-weight:600}
+.badge-free{background:#dcfce7;color:#166534}.badge-paid{background:#fef3c7;color:#92400e}
+.icon-btn{width:27px;height:27px;border-radius:7px;border:none;cursor:pointer;display:inline-flex;align-items:center;justify-content:center;font-size:13px;margin-left:4px}
+.icon-btn-e{background:#d9eef9;color:#1a3a5c}.icon-btn-d{background:#fee2e2;color:#dc2626}
+.toggle-row{display:flex;align-items:center;gap:10px;padding:10px 0}
+.toggle{position:relative;width:44px;height:24px;flex-shrink:0}
+.toggle input{opacity:0;width:0;height:0}
+.slider{position:absolute;inset:0;background:#e8edf3;border-radius:24px;cursor:pointer;transition:0.3s}
+.slider:before{content:'';position:absolute;width:18px;height:18px;left:3px;bottom:3px;background:white;border-radius:50%;transition:0.3s;box-shadow:0 1px 4px rgba(0,0,0,0.2)}
+input:checked+.slider{background:#1a3a5c}input:checked+.slider:before{transform:translateX(20px)}
+.toast{position:fixed;bottom:22px;left:50%;transform:translateX(-50%) translateY(100px);background:#1a3a5c;color:white;padding:12px 22px;border-radius:10px;font-size:14px;font-weight:500;box-shadow:0 8px 32px rgba(0,0,0,0.2);transition:transform 0.3s;z-index:999;border-right:4px solid #e8c840}
+.toast.show{transform:translateX(-50%) translateY(0)}
+@media(max-width:768px){.admin-grid{grid-template-columns:1fr}.stats-row{grid-template-columns:repeat(2,1fr)}}
+</style></head><body>
+<header>
+  <div class="logo">🛠️ ניהול – סיכומים במאמרי רבינו</div>
+  <button class="close-btn" onclick="window.close()">✕ סגור</button>
+</header>
+<main>
+  <div class="stats-row">
+    <div class="stat-card"><span class="stat-num" id="s-total">0</span><div class="stat-label">חוברות</div></div>
+    <div class="stat-card gold"><span class="stat-num" id="s-views">0</span><div class="stat-label">סה"כ צפיות</div></div>
+    <div class="stat-card green"><span class="stat-num" id="s-dl">0</span><div class="stat-label">סה"כ הורדות</div></div>
+    <div class="stat-card red"><span class="stat-num" id="s-paid">0</span><div class="stat-label">בתשלום</div></div>
+  </div>
+  <div class="admin-grid">
+    <div class="card">
+      <h3 id="form-title">➕ הוסף חוברת חדשה</h3>
+      <div class="fg">
+        <label>🖼️ קישור תמונת שער</label>
+        <input type="text" id="f-img-url" placeholder="הדבק קישור תמונה (Google Drive / כל קישור אחר)..." />
+        <p style="font-size:11px;color:#8fa3b8;margin-top:4px">ב-Google Drive: שתף את התמונה ← כל מי שיש לו קישור ← העתק קישור</p>
+      </div>
+      <br/>
+      <div class="fg">
+        <label>🔗 קישור PDF (Google Drive)</label>
+        <input type="text" id="f-pdf-url" placeholder="הדבק קישור שיתוף מ-Google Drive..." />
+        <p style="font-size:11px;color:#8fa3b8;margin-top:4px">ב-Google Drive: לחץ ימני על הקובץ ← שתף ← כל מי שיש לו קישור ← העתק קישור</p>
+      </div>
+      <div class="fg"><label>שם המאמר / החוברת *</label><input type="text" id="f-title" placeholder="למשל: ויצא יעקב"/></div>
+      <div class="fg">
+        <label>קטגוריה</label>
+        <select id="f-cat">
+          <option value="">בחר קטגוריה</option>
+        </select>
+      </div>
+      <div class="fg"><label>תיאור קצר</label><textarea id="f-desc" placeholder="תיאור המאמר בקצרה..."></textarea></div>
+      <div class="fg"><label>מחיר ₪ (0 = חינם)</label><input type="number" id="f-price" value="0" min="0"/></div>
+      <div style="display:flex;gap:10px">
+        <button class="btn btn-primary" onclick="saveBook()" style="flex:2" id="save-btn">💾 שמור</button>
+        <button class="btn btn-outline" onclick="resetForm()" style="flex:1">ביטול</button>
+      </div>
+
+      <div style="margin-top:20px;padding-top:16px;border-top:2px solid #d9eef9;">
+        <h3 style="font-family:'Frank Ruhl Libre',serif;font-size:15px;font-weight:700;color:#1a3a5c;margin-bottom:12px;">⚙️ מה להציג לגולשים</h3>
+        <div class="toggle-row"><label class="toggle"><input type="checkbox" id="tg-total" onchange="saveSetting(this.dataset.key,this.checked)" data-key="showTotal"/><span class="slider"></span></label><span style="font-size:13px;color:#3a5068;">כמות חוברות</span></div>
+        <div class="toggle-row"><label class="toggle"><input type="checkbox" id="tg-views" onchange="saveSetting(this.dataset.key,this.checked)" data-key="showViews"/><span class="slider"></span></label><span style="font-size:13px;color:#3a5068;">מספר צפיות</span></div>
+        <div class="toggle-row"><label class="toggle"><input type="checkbox" id="tg-dl" onchange="saveSetting(this.dataset.key,this.checked)" data-key="showDownloads"/><span class="slider"></span></label><span style="font-size:13px;color:#3a5068;">מספר הורדות</span></div>
+      </div>
+    </div>
+
+    <div class="card" style="overflow-x:auto">
+      <h3>📋 רשימת חוברות</h3>
+      <table class="tbl">
+        <thead><tr><th>שם</th><th>קטגוריה</th><th>צפיות</th><th>הורדות</th><th>מחיר</th><th>פעולות</th></tr></thead>
+        <tbody id="tbl-body"></tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- CATEGORIES -->
+  <div style="margin-top:20px">
+    <div class="card">
+      <h3>🏷️ ניהול קטגוריות</h3>
+      <div style="display:flex;gap:10px;margin-bottom:16px;align-items:flex-end;flex-wrap:wrap">
+        <div class="fg" style="flex:1;margin:0">
+          <label>שם קטגוריה</label>
+          <input type="text" id="cat-name" placeholder="למשל: התשפ״ו או חנוכה" />
+        </div>
+        <div class="fg" style="flex:1;margin:0">
+          <label>סוג</label>
+          <select id="cat-type">
+            <option value="שנה">לפי שנה</option>
+            <option value="חג">חגים ומועדים</option>
+            <option value="אחר">אחר</option>
+          </select>
+        </div>
+        <button class="btn btn-primary" onclick="saveCat()" id="cat-btn" style="flex:none;padding:10px 20px">➕ הוסף</button>
+        <button class="btn btn-outline" onclick="resetCat()" style="flex:none;padding:10px 16px">ביטול</button>
+      </div>
+      <div id="cat-list" style="display:flex;flex-wrap:wrap;gap:8px"></div>
+    </div>
+  </div>
+</main>
+<div class="toast" id="toast"></div>
+
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+import { getFirestore, collection, doc, setDoc, deleteDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+
+const app = initializeApp({
+  apiKey:"AIzaSyBLOrM83RtH4VToygfpo2dxG-NcpebcLiI",
+  authDomain:"maamrei-rabenu.firebaseapp.com",
+  projectId:"maamrei-rabenu",
+  storageBucket:"maamrei-rabenu.firebasestorage.app",
+  messagingSenderId:"484133741429",
+  appId:"1:484133741429:web:f9a716cc670965048be93c"
+});
+const db = getFirestore(app);
+
+let books = [];
+let cats = [];
+let cfg = {};
+let editId = null, editCatId = null;
+
+// init toggles
+document.getElementById('tg-total').checked = !!cfg.showTotal;
+document.getElementById('tg-views').checked = !!cfg.showViews;
+document.getElementById('tg-dl').checked = !!cfg.showDownloads;
+
+// real-time listeners
+onSnapshot(collection(db,'booklets'), snap => {
+  books = snap.docs.map(d=>({id:d.id,...d.data()}));
+  books.sort((a,b)=>(a.order||0)-(b.order||0)||a.title.localeCompare(b.title,'he'));
+  renderStats(); renderTable();
+});
+
+onSnapshot(collection(db,'categories'), snap => {
+  cats = snap.docs.map(d=>({id:d.id,...d.data()}));
+  cats.sort((a,b)=>a.name.localeCompare(b.name,'he'));
+  renderCatSelect(); renderCatList();
+});
+
+function renderStats(){
+  document.getElementById('s-total').textContent=books.length;
+  document.getElementById('s-views').textContent=books.reduce((s,b)=>s+(b.views||0),0).toLocaleString();
+  document.getElementById('s-dl').textContent=books.reduce((s,b)=>s+(b.downloads||0),0).toLocaleString();
+  document.getElementById('s-paid').textContent=books.filter(b=>b.price>0).length;
+}
+
+function renderTable(){
+  document.getElementById('tbl-body').innerHTML=books.map(b=>`
+    <tr>
+      <td><strong>${b.title}</strong></td>
+      <td>${b.category||''}</td>
+      <td>${b.views||0}</td>
+      <td>${b.downloads||0}</td>
+      <td><span class="badge ${b.price>0?'badge-paid':'badge-free'}">${b.price>0?'₪'+b.price:'חינם'}</span></td>
+      <td>
+        <button class="icon-btn icon-btn-e" onclick="editBook('${b.id}')">✏️</button>
+        <button class="icon-btn icon-btn-d" onclick="delBook('${b.id}')">🗑️</button>
+      </td>
+    </tr>
+  `).join('');
+}
+
+function handleImg(inp){ imgFile=inp.files[0]; if(imgFile) document.getElementById('img-name').textContent='✅ '+imgFile.name; }
+document.getElementById('img-up').onchange=e=>handleImg(e.target);
+
+// Convert Google Drive share URL to embed/preview URL
+function convertDriveUrl(url) {
+  if (!url) return '';
+  if (url.includes('/preview') || url.includes('/uc?')) return url;
+  const match = url.match(//d/([a-zA-Z0-9_-]+)/);
+  if (match) return `https://drive.google.com/file/d/${match[1]}/preview`;
+  return url;
+}
+
+// Convert Google Drive image URL to direct image URL
+function convertDriveImgUrl(url) {
+  if (!url) return '';
+  if (!url.includes('drive.google.com')) return url;
+  const match = url.match(//d/([a-zA-Z0-9_-]+)/);
+  if (match) return `https://drive.google.com/thumbnail?id=${match[1]}&sz=w600`;
+  return url;
+}
+
+window.saveBook = async function() {
+  const title=document.getElementById('f-title').value.trim();
+  if(!title){showToast('⚠️ חובה שם חוברת');return;}
+  document.getElementById('save-btn').textContent='⏳ שומר...';
+  document.getElementById('save-btn').disabled=true;
+
+  try {
+    const id = editId || ('booklet_'+Date.now());
+    const existing = editId ? books.find(x=>x.id===editId) : {};
+    const rawPdfUrl = document.getElementById('f-pdf-url').value.trim();
+    const rawImgUrl = document.getElementById('f-img-url').value.trim();
+    const pdfUrl = rawPdfUrl ? convertDriveUrl(rawPdfUrl) : (existing?.pdfUrl||'');
+    const imgUrl = rawImgUrl ? convertDriveImgUrl(rawImgUrl) : (existing?.imgUrl||'');
+
+    const data = {
+      title,
+      category: document.getElementById('f-cat').value,
+      desc: document.getElementById('f-desc').value.trim(),
+      price: parseFloat(document.getElementById('f-price').value)||0,
+      pdfUrl, imgUrl,
+      views: existing?.views||0,
+      downloads: existing?.downloads||0,
+      updatedAt: new Date().toISOString()
+    };
+    if(!editId) data.createdAt = new Date().toISOString();
+
+    await setDoc(doc(db,'booklets',id), data, {merge:true});
+    showToast(editId?'✅ עודכן בהצלחה!':'✅ נוסף בהצלחה!');
+    resetForm();
+  } catch(e) {
+    console.error(e);
+    showToast('❌ שגיאה בשמירה: '+e.message);
+  }
+  document.getElementById('save-btn').textContent='💾 שמור';
+  document.getElementById('save-btn').disabled=false;
+};
+
+window.editBook = function(id) {
+  const b=books.find(x=>x.id===id); editId=id;
+  document.getElementById('f-title').value=b.title||'';
+  document.getElementById('f-cat').value=b.category||'';
+  document.getElementById('f-desc').value=b.desc||'';
+  document.getElementById('f-price').value=b.price||0;
+  document.getElementById('f-pdf-url').value=b.pdfUrl||'';
+  document.getElementById('f-img-url').value=b.imgUrl||'';
+  document.getElementById('form-title').textContent='✏️ ערוך חוברת';
+  window.scrollTo({top:0,behavior:'smooth'});
+};
+
+window.delBook = async function(id) {
+  if(!confirm('למחוק חוברת זו לצמיתות?'))return;
+  try {
+    await deleteDoc(doc(db,'booklets',id));
+    showToast('🗑️ נמחק');
+  } catch(e){ showToast('❌ שגיאה במחיקה'); }
+};
+
+window.resetForm = function() {
+  editId=null;
+  ['f-title','f-desc','f-pdf-url','f-img-url'].forEach(i=>document.getElementById(i).value='');
+  document.getElementById('f-cat').value='';
+  document.getElementById('f-price').value='0';
+  document.getElementById('form-title').textContent='➕ הוסף חוברת חדשה';
+};
+
+window.saveSetting = async function(key, val) {
+  cfg[key]=val;
+  try { await setDoc(doc(db,'config','settings'), cfg, {merge:true}); showToast('✅ הגדרה נשמרה'); }
+  catch(e){ showToast('❌ שגיאה בשמירת הגדרה'); }
+};
+
+function renderCatSelect() {
+  const sel = document.getElementById('f-cat');
+  const cur = sel.value;
+  const groups = { 'שנה': 'לפי שנה', 'חג': 'חגים ומועדים', 'אחר': 'אחר' };
+  let html = '<option value="">בחר קטגוריה</option>';
+  for (const [type, label] of Object.entries(groups)) {
+    const group = cats.filter(c => c.type === type);
+    if (group.length) {
+      html += `<optgroup label="${label}">${group.map(c=>`<option value="${c.name}">${c.name}</option>`).join('')}</optgroup>`;
+    }
+  }
+  sel.innerHTML = html;
+  if (cur) sel.value = cur;
+}
+
+function renderCatList() {
+  const typeLabel = { 'שנה': '📅', 'חג': '🕎', 'אחר': '📌' };
+  document.getElementById('cat-list').innerHTML = cats.map(c => `
+    <div style="display:inline-flex;align-items:center;gap:6px;background:#f4f7fa;border:2px solid #e8edf3;border-radius:20px;padding:5px 12px;font-size:13px;">
+      <span>${typeLabel[c.type]||'📌'} ${c.name}</span>
+      <button onclick="editCat('${c.id}')" style="background:none;border:none;cursor:pointer;font-size:13px;padding:0 2px;" title="ערוך">✏️</button>
+      <button onclick="delCat('${c.id}')" style="background:none;border:none;cursor:pointer;font-size:13px;padding:0 2px;" title="מחק">🗑️</button>
+    </div>
+  `).join('');
+}
+
+window.saveCat = async function() {
+  const name = document.getElementById('cat-name').value.trim();
+  const type = document.getElementById('cat-type').value;
+  if (!name) { showToast('⚠️ חובה שם קטגוריה'); return; }
+  document.getElementById('cat-btn').disabled = true;
+  try {
+    const id = editCatId || ('cat_' + Date.now());
+    await setDoc(doc(db, 'categories', id), { name, type }, { merge: true });
+    showToast(editCatId ? '✅ קטגוריה עודכנה' : '✅ קטגוריה נוספה');
+    resetCat();
+  } catch(e) { showToast('❌ שגיאה: ' + e.message); }
+  document.getElementById('cat-btn').disabled = false;
+};
+
+window.editCat = function(id) {
+  const c = cats.find(x => x.id === id); editCatId = id;
+  document.getElementById('cat-name').value = c.name;
+  document.getElementById('cat-type').value = c.type;
+  document.getElementById('cat-btn').textContent = '💾 עדכן';
+};
+
+window.delCat = async function(id) {
+  const c = cats.find(x => x.id === id);
+  const inUse = books.some(b => b.category === c?.name);
+  if (inUse && !confirm(`הקטגוריה "${c.name}" בשימוש. למחוק בכל זאת?`)) return;
+  if (!inUse && !confirm(`למחוק את הקטגוריה "${c?.name}"?`)) return;
+  try { await deleteDoc(doc(db, 'categories', id)); showToast('🗑️ נמחק'); }
+  catch(e) { showToast('❌ שגיאה במחיקה'); }
+};
+
+window.resetCat = function() {
+  editCatId = null;
+  document.getElementById('cat-name').value = '';
+  document.getElementById('cat-type').value = 'שנה';
+  document.getElementById('cat-btn').textContent = '➕ הוסף';
+};
+
+function showToast(msg){const t=document.getElementById('toast');t.textContent=msg;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),3000);}
+</script>
+</body></html>
