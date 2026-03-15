@@ -678,6 +678,7 @@ window.saveAllHistory = async function() {
 
 async function loadVisits() {
   try {
+    const snap = await getDocs(collection(db, 'site_stats'));
     const days = snap.docs.map(d => ({ date: d.id, visits: d.data().visits||0 }));
     const now = new Date();
     const today = now.toISOString().split('T')[0];
