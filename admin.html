@@ -78,6 +78,15 @@ input:checked+.slider{background:#1a3a5c}input:checked+.slider:before{transform:
   <div class="logo">🛠️ ניהול – סיכומים במאמרי רבינו</div>
   <button class="close-btn" onclick="window.location.href='index.html'">✕ סגור</button>
 </header>
+
+<!-- TABS NAV -->
+<div style="background:white;border-bottom:2px solid #d9eef9;padding:0 28px;display:flex;gap:4px;">
+  <button id="tab-manage-btn" onclick="switchTab('manage')" style="padding:14px 24px;border:none;background:none;font-family:Heebo,sans-serif;font-size:15px;font-weight:700;color:#1a3a5c;cursor:pointer;border-bottom:3px solid #1a3a5c;margin-bottom:-2px;">🛠️ ניהול</button>
+  <button id="tab-stats-btn" onclick="switchTab('stats')" style="padding:14px 24px;border:none;background:none;font-family:Heebo,sans-serif;font-size:15px;font-weight:600;color:#8fa3b8;cursor:pointer;border-bottom:3px solid transparent;margin-bottom:-2px;">📊 סטטיסטיקות</button>
+</div>
+
+<!-- TAB: MANAGE -->
+<div id="tab-manage">
 <main>
   <div class="stats-row">
     <div class="stat-card"><span class="stat-num" id="s-total">0</span><div class="stat-label">חוברות</div></div>
@@ -152,6 +161,19 @@ input:checked+.slider{background:#1a3a5c}input:checked+.slider:before{transform:
     </div>
   </div>
 </main>
+</div><!-- end tab-manage -->
+
+<!-- TAB: STATS (placeholder) -->
+<div id="tab-stats" style="display:none;">
+<main>
+  <div class="card" style="text-align:center;padding:60px;color:#8fa3b8;">
+    <div style="font-size:48px;margin-bottom:16px;">📊</div>
+    <div style="font-family:'Frank Ruhl Libre',serif;font-size:22px;font-weight:700;color:#1a3a5c;margin-bottom:8px;">סטטיסטיקות</div>
+    <div style="font-size:15px;">בקרוב — נתוני צפיות, הורדות וכניסות לאתר</div>
+  </div>
+</main>
+</div><!-- end tab-stats -->
+
 <div class="toast" id="toast"></div>
 
 <script type="module">
@@ -419,6 +441,17 @@ window.resetCat = function() {
 };
 
 function showToast(msg){const t=document.getElementById('toast');t.textContent=msg;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),3000);}
+
+window.switchTab = function(tab) {
+  document.getElementById('tab-manage').style.display = tab==='manage' ? 'block' : 'none';
+  document.getElementById('tab-stats').style.display = tab==='stats' ? 'block' : 'none';
+  document.getElementById('tab-manage-btn').style.cssText = tab==='manage'
+    ? 'padding:14px 24px;border:none;background:none;font-family:Heebo,sans-serif;font-size:15px;font-weight:700;color:#1a3a5c;cursor:pointer;border-bottom:3px solid #1a3a5c;margin-bottom:-2px;'
+    : 'padding:14px 24px;border:none;background:none;font-family:Heebo,sans-serif;font-size:15px;font-weight:600;color:#8fa3b8;cursor:pointer;border-bottom:3px solid transparent;margin-bottom:-2px;';
+  document.getElementById('tab-stats-btn').style.cssText = tab==='stats'
+    ? 'padding:14px 24px;border:none;background:none;font-family:Heebo,sans-serif;font-size:15px;font-weight:700;color:#1a3a5c;cursor:pointer;border-bottom:3px solid #1a3a5c;margin-bottom:-2px;'
+    : 'padding:14px 24px;border:none;background:none;font-family:Heebo,sans-serif;font-size:15px;font-weight:600;color:#8fa3b8;cursor:pointer;border-bottom:3px solid transparent;margin-bottom:-2px;';
+};
 
 
 // ===== LOGIN GATE =====
