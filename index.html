@@ -46,7 +46,10 @@
 
   /* FILTERS */
   .filter-section { margin-bottom: 36px; }
-  .filter-row { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; margin-bottom: 10px; }
+  .filter-row { display: flex; gap: 8px; align-items: center; margin-bottom: 10px; overflow-x: auto; padding-bottom: 4px; -webkit-overflow-scrolling: touch; scrollbar-width: none; }
+  .filter-row::-webkit-scrollbar { display: none; }
+  .filter-label { flex-shrink: 0; }
+  .filter-btn { flex-shrink: 0; }
   .filter-label { font-size: 13px; font-weight: 700; color: var(--navy); min-width: 80px; }
   .filter-btn { padding: 7px 18px; border-radius: 24px; border: 2px solid var(--sky-dark); background: white; color: var(--navy); font-family: 'Heebo', sans-serif; font-size: 13px; font-weight: 500; cursor: pointer; transition: all 0.2s; }
   .filter-btn:hover { border-color: var(--navy); background: var(--sky-light); }
