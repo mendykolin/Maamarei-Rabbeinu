@@ -234,6 +234,12 @@ let activeTopic = 'הכל';
 
 // ===== INIT =====
 async function init() {
+  // Count visit
+  try {
+    const today = new Date().toISOString().split('T')[0];
+    await setDoc(doc(db, 'site_stats', today), { visits: increment(1) }, { merge: true });
+  } catch(e) {}
+
   // Load settings
   try {
     const settingsDoc = await getDoc(doc(db, 'config', 'settings'));
