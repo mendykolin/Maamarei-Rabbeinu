@@ -167,24 +167,28 @@ input:checked+.slider{background:#1a3a5c}input:checked+.slider:before{transform:
 <!-- TAB: STATS -->
 <div id="tab-stats" style="display:none;">
 <main>
-  <!-- Top cards -->
-  <div class="stats-row">
-    <div class="stat-card"><span class="stat-num" id="st-total">0</span><div class="stat-label">חוברות</div></div>
-    <div class="stat-card gold"><span class="stat-num" id="st-views">0</span><div class="stat-label">סה"כ צפיות</div></div>
-    <div class="stat-card green"><span class="stat-num" id="st-dl">0</span><div class="stat-label">סה"כ הורדות</div></div>
-    <div class="stat-card red"><span class="stat-num" id="st-paid">0</span><div class="stat-label">בתשלום</div></div>
+
+  <!-- Global range selector -->
+  <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px;margin-bottom:20px;">
+    <div style="font-family:'Frank Ruhl Libre',serif;font-size:18px;font-weight:700;color:#1a3a5c;">סטטיסטיקות</div>
+    <div style="display:flex;gap:6px;">
+      <button class="range-btn active" data-range="all" onclick="setRange(this)">מאז ומתמיד</button>
+      <button class="range-btn" data-range="month" onclick="setRange(this)">חודש</button>
+      <button class="range-btn" data-range="week" onclick="setRange(this)">שבוע</button>
+      <button class="range-btn" data-range="day" onclick="setRange(this)">היום</button>
+    </div>
   </div>
 
-  <!-- Visit cards -->
-  <div class="stats-row" style="margin-bottom:20px;">
-    <div class="stat-card" style="border-top-color:#8b5cf6;"><span class="stat-num" id="st-visits-day" style="color:#8b5cf6;">-</span><div class="stat-label">כניסות היום</div></div>
-    <div class="stat-card" style="border-top-color:#8b5cf6;"><span class="stat-num" id="st-visits-week" style="color:#8b5cf6;">-</span><div class="stat-label">כניסות השבוע</div></div>
-    <div class="stat-card" style="border-top-color:#8b5cf6;"><span class="stat-num" id="st-visits-month" style="color:#8b5cf6;">-</span><div class="stat-label">כניסות החודש</div></div>
-    <div class="stat-card" style="border-top-color:#8b5cf6;"><span class="stat-num" id="st-visits-total" style="color:#8b5cf6;">-</span><div class="stat-label">סה"כ כניסות</div></div>
+  <!-- Top cards: booklets summary -->
+  <div class="stats-row">
+    <div class="stat-card"><span class="stat-num" id="st-total">0</span><div class="stat-label">חוברות</div></div>
+    <div class="stat-card gold"><span class="stat-num" id="st-views">0</span><div class="stat-label">צפיות</div></div>
+    <div class="stat-card green"><span class="stat-num" id="st-dl">0</span><div class="stat-label">הורדות</div></div>
+    <div class="stat-card" style="border-top-color:#8b5cf6;"><span class="stat-num" id="st-visits-range" style="color:#8b5cf6;">-</span><div class="stat-label">כניסות לאתר</div></div>
   </div>
 
   <!-- Top 3 -->
-  <div class="admin-grid" style="margin-bottom:20px;">
+  <div class="admin-grid" style="margin-bottom:20px;margin-top:20px;">
     <div class="card">
       <h3>👁 Top 3 נצפות</h3>
       <div id="top-views"></div>
@@ -195,23 +199,13 @@ input:checked+.slider{background:#1a3a5c}input:checked+.slider:before{transform:
     </div>
   </div>
 
-  <!-- Table / Chart toggle -->
+  <!-- Table / Chart -->
   <div class="card" style="margin-bottom:20px;">
     <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px;margin-bottom:16px;">
       <h3 style="margin:0;">📋 נתונים לפי חוברת</h3>
-      <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
-        <!-- Range filter -->
-        <div style="display:flex;gap:6px;">
-          <button class="range-btn active" data-range="all" onclick="setRange(this)">מאז ומתמיד</button>
-          <button class="range-btn" data-range="month" onclick="setRange(this)">חודש</button>
-          <button class="range-btn" data-range="week" onclick="setRange(this)">שבוע</button>
-          <button class="range-btn" data-range="day" onclick="setRange(this)">היום</button>
-        </div>
-        <!-- View toggle -->
-        <div style="display:flex;gap:6px;">
-          <button class="view-btn active" data-view="table" onclick="setView(this)">📋 טבלה</button>
-          <button class="view-btn" data-view="chart" onclick="setView(this)">📊 גרף</button>
-        </div>
+      <div style="display:flex;gap:6px;">
+        <button class="view-btn active" data-view="table" onclick="setView(this)">📋 טבלה</button>
+        <button class="view-btn" data-view="chart" onclick="setView(this)">📊 גרף</button>
       </div>
     </div>
     <div id="stats-table-wrap"></div>
@@ -265,6 +259,12 @@ function initAdmin() {
     books = snap.docs.map(d=>({id:d.id,...d.data()}));
     books.sort((a,b)=>(a.order||0)-(b.order||0)||a.title.localeCompare(b.title,'he'));
     renderStats(); renderTable();
+    // If stats tab is visible, refresh it too
+    if (document.getElementById('tab-stats').style.display !== 'none') {
+      renderStatsContent();
+      calcInsights();
+      loadVisits();
+    }
   });
 
   onSnapshot(collection(db,'categories'), snap => {
@@ -501,6 +501,8 @@ window.setRange = function(btn) {
   btn.classList.add('active');
   currentRange = btn.dataset.range;
   renderStatsContent();
+  loadVisits();
+  calcInsights();
 };
 
 window.setView = function(btn) {
@@ -532,9 +534,11 @@ async function getBookletStats(bookId) {
 async function renderStatsContent() {
   // Update top cards
   document.getElementById('st-total').textContent = books.length;
-  document.getElementById('st-views').textContent = books.reduce((s,b)=>s+(b.views||0),0).toLocaleString();
-  document.getElementById('st-dl').textContent = books.reduce((s,b)=>s+(b.downloads||0),0).toLocaleString();
-  document.getElementById('st-paid').textContent = books.filter(b=>b.price>0).length;
+  // For 'all' range use totals, otherwise will be updated after data loads
+  if (currentRange === 'all') {
+    document.getElementById('st-views').textContent = books.reduce((s,b)=>s+(b.views||0),0).toLocaleString();
+    document.getElementById('st-dl').textContent = books.reduce((s,b)=>s+(b.downloads||0),0).toLocaleString();
+  }
 
   // Get data per book
   let data = [];
@@ -548,6 +552,9 @@ async function renderStatsContent() {
       return { title: b.title, views: stats?.views||0, downloads: stats?.downloads||0 };
     });
     data = await Promise.all(promises);
+    // Update summary cards with range totals
+    document.getElementById('st-views').textContent = data.reduce((s,b)=>s+b.views,0).toLocaleString();
+    document.getElementById('st-dl').textContent = data.reduce((s,b)=>s+b.downloads,0).toLocaleString();
   }
 
   data.sort((a,b) => (b.views+b.downloads) - (a.views+a.downloads));
@@ -611,40 +618,94 @@ function buildChart(data, canvas) {
   });
 }
 
-function calcInsights() {
+async function calcInsights() {
   const result = document.getElementById('insights-result');
   if (!books.length) { result.innerHTML = '<div style="color:#8fa3b8;text-align:center;padding:20px;">אין נתונים עדיין</div>'; return; }
 
+  result.innerHTML = '<div style="color:#8fa3b8;text-align:center;padding:16px;">⏳ מחשב תובנות...</div>';
+
+  const rangeLabel = { all: 'מאז ומתמיד', month: 'החודש', week: 'השבוע', day: 'היום' }[currentRange];
+
+  // Get data for current range
+  let data = [];
+  if (currentRange === 'all') {
+    data = books.map(b => ({ id: b.id, title: b.title, views: b.views||0, downloads: b.downloads||0,
+      categories: Array.isArray(b.categories) ? b.categories : (b.category ? [b.category] : []) }));
+  } else {
+    const now = new Date();
+    const today = now.toISOString().split('T')[0];
+    const weekAgo = new Date(now - 7*24*60*60*1000).toISOString().split('T')[0];
+    const monthAgo = new Date(now - 30*24*60*60*1000).toISOString().split('T')[0];
+    const cutoff = currentRange === 'day' ? today : currentRange === 'week' ? weekAgo : monthAgo;
+    data = await Promise.all(books.map(async b => {
+      const stats = await getBookletStats(b.id);
+      return { id: b.id, title: b.title, views: stats?.views||0, downloads: stats?.downloads||0,
+        categories: Array.isArray(b.categories) ? b.categories : (b.category ? [b.category] : []) };
+    }));
+  }
+
+  // Get visits for range
+  let visits = 0;
+  try {
+    const snap = await getDocs(collection(db, 'site_stats'));
+    const days = snap.docs.map(d => ({ date: d.id, visits: d.data().visits||0 }));
+    const now = new Date();
+    const today = now.toISOString().split('T')[0];
+    const weekAgo = new Date(now - 7*24*60*60*1000).toISOString().split('T')[0];
+    const monthAgo = new Date(now - 30*24*60*60*1000).toISOString().split('T')[0];
+    if (currentRange === 'day') visits = days.filter(d=>d.date===today).reduce((s,d)=>s+d.visits,0);
+    else if (currentRange === 'week') visits = days.filter(d=>d.date>=weekAgo).reduce((s,d)=>s+d.visits,0);
+    else if (currentRange === 'month') visits = days.filter(d=>d.date>=monthAgo).reduce((s,d)=>s+d.visits,0);
+    else visits = days.reduce((s,d)=>s+d.visits,0);
+  } catch(e) {}
+
   const insights = [];
-  const sorted = [...books].sort((a,b)=>(b.views||0)-(a.views||0));
-  const totalViews = books.reduce((s,b)=>s+(b.views||0),0);
-  const totalDl = books.reduce((s,b)=>s+(b.downloads||0),0);
+  const totalViews = data.reduce((s,b)=>s+b.views,0);
+  const totalDl = data.reduce((s,b)=>s+b.downloads,0);
+  const sorted = [...data].sort((a,b)=>b.views-a.views);
 
+  // Visits insight
+  if (visits > 0)
+    insights.push(`🚪 ${rangeLabel}: <strong>${visits.toLocaleString()} כניסות</strong> לאתר`);
+
+  // Most popular booklet
   if (sorted[0]?.views > 0)
-    insights.push(`🏆 החוברת הכי פופולרית: <strong>${sorted[0].title}</strong> עם ${sorted[0].views} צפיות`);
+    insights.push(`🏆 החוברת הכי פופולרית ${rangeLabel}: <strong>${sorted[0].title}</strong> עם ${sorted[0].views} צפיות`);
 
-  const bestRatio = books.filter(b=>(b.views||0)>0)
-    .map(b=>({...b, ratio: (b.downloads||0)/(b.views||0)}))
+  // Download ratio
+  const bestRatio = data.filter(b=>b.views>0)
+    .map(b=>({...b, ratio: b.downloads/b.views}))
     .sort((a,b)=>b.ratio-a.ratio)[0];
   if (bestRatio?.ratio > 0)
-    insights.push(`⬇️ יחס הורדות/צפיות הכי גבוה: <strong>${bestRatio.title}</strong> (${Math.round(bestRatio.ratio*100)}% מהצופים מורידים)`);
+    insights.push(`⬇️ יחס הורדות/צפיות הכי גבוה: <strong>${bestRatio.title}</strong> (${Math.round(bestRatio.ratio*100)}%)`);
 
+  // Top category
   const catCount = {};
-  books.forEach(b => {
-    const cats = Array.isArray(b.categories) ? b.categories : (b.category ? [b.category] : []);
-    cats.forEach(c => { catCount[c] = (catCount[c]||0) + (b.views||0); });
-  });
+  data.forEach(b => b.categories.forEach(c => { catCount[c] = (catCount[c]||0) + b.views; }));
   const topCat = Object.entries(catCount).sort((a,b)=>b[1]-a[1])[0];
-  if (topCat) insights.push(`📂 הקטגוריה הכי פופולרית: <strong>${topCat[0]}</strong> עם ${topCat[1]} צפיות`);
+  if (topCat) insights.push(`📂 הקטגוריה הכי פופולרית ${rangeLabel}: <strong>${topCat[0]}</strong> עם ${topCat[1]} צפיות`);
 
-  const neverViewed = books.filter(b=>!(b.views>0));
-  if (neverViewed.length > 0)
-    insights.push(`👀 ${neverViewed.length} חוברות עדיין לא קיבלו אף צפייה — כדאי לקדם אותן`);
+  // Views vs visits ratio
+  if (visits > 0 && totalViews > 0) {
+    const avg = (totalViews / visits).toFixed(1);
+    insights.push(`📖 כל מבקר צפה בממוצע ב-<strong>${avg} חוברות</strong> ${rangeLabel}`);
+  }
 
+  // Never viewed (only for 'all')
+  if (currentRange === 'all') {
+    const neverViewed = data.filter(b=>b.views===0);
+    if (neverViewed.length > 0)
+      insights.push(`👀 ${neverViewed.length} חוברות עדיין לא קיבלו אף צפייה — כדאי לקדם אותן`);
+  }
+
+  // Downloads vs views overall
   if (totalViews > 0) {
     const pct = Math.round(totalDl/totalViews*100);
-    insights.push(`📊 ${pct}% מהצופים באתר גם מורידים את החוברת`);
+    insights.push(`📊 ${pct}% מהצופים ${rangeLabel} גם הורידו חוברת`);
   }
+
+  if (!insights.length)
+    insights.push('אין מספיק נתונים לתובנות בטווח זה — נסה "מאז ומתמיד"');
 
   result.innerHTML = insights.map(i =>
     `<div style="padding:10px 14px;margin-bottom:8px;background:#f4f7fa;border-radius:10px;border-right:3px solid #1a3a5c;font-size:14px;color:#1a2e42;line-height:1.6;">${i}</div>`
@@ -685,15 +746,14 @@ async function loadVisits() {
     const weekAgo = new Date(now - 7*24*60*60*1000).toISOString().split('T')[0];
     const monthAgo = new Date(now - 30*24*60*60*1000).toISOString().split('T')[0];
 
-    const visitsDay = days.filter(d=>d.date===today).reduce((s,d)=>s+d.visits,0);
-    const visitsWeek = days.filter(d=>d.date>=weekAgo).reduce((s,d)=>s+d.visits,0);
-    const visitsMonth = days.filter(d=>d.date>=monthAgo).reduce((s,d)=>s+d.visits,0);
-    const visitsTotal = days.reduce((s,d)=>s+d.visits,0);
+    let visits;
+    if (currentRange === 'day') visits = days.filter(d=>d.date===today).reduce((s,d)=>s+d.visits,0);
+    else if (currentRange === 'week') visits = days.filter(d=>d.date>=weekAgo).reduce((s,d)=>s+d.visits,0);
+    else if (currentRange === 'month') visits = days.filter(d=>d.date>=monthAgo).reduce((s,d)=>s+d.visits,0);
+    else visits = days.reduce((s,d)=>s+d.visits,0);
 
-    document.getElementById('st-visits-day').textContent = visitsDay.toLocaleString();
-    document.getElementById('st-visits-week').textContent = visitsWeek.toLocaleString();
-    document.getElementById('st-visits-month').textContent = visitsMonth.toLocaleString();
-    document.getElementById('st-visits-total').textContent = visitsTotal.toLocaleString();
+    const el = document.getElementById('st-visits-range');
+    if (el) el.textContent = visits.toLocaleString();
   } catch(e) {}
 }
 
@@ -733,6 +793,8 @@ window.checkGate = async function() {
       document.getElementById('login-gate').style.display = 'none';
       document.getElementById('admin-content').style.display = 'block';
       initAdmin();
+      // Init whichever tab is currently shown
+      setTimeout(() => initStatsTab(), 500);
     } else {
       inp.style.borderColor = '#ef4444';
       inp.value = '';
