@@ -181,6 +181,14 @@ input:checked+.slider{background:#1a3a5c}input:checked+.slider:before{transform:
     <div class="stat-card red"><span class="stat-num" id="st-paid">0</span><div class="stat-label">בתשלום</div></div>
   </div>
 
+  <!-- Visit cards -->
+  <div class="stats-row" style="margin-bottom:20px;">
+    <div class="stat-card" style="border-top-color:#8b5cf6;"><span class="stat-num" id="st-visits-day" style="color:#8b5cf6;">-</span><div class="stat-label">כניסות היום</div></div>
+    <div class="stat-card" style="border-top-color:#8b5cf6;"><span class="stat-num" id="st-visits-week" style="color:#8b5cf6;">-</span><div class="stat-label">כניסות השבוע</div></div>
+    <div class="stat-card" style="border-top-color:#8b5cf6;"><span class="stat-num" id="st-visits-month" style="color:#8b5cf6;">-</span><div class="stat-label">כניסות החודש</div></div>
+    <div class="stat-card" style="border-top-color:#8b5cf6;"><span class="stat-num" id="st-visits-total" style="color:#8b5cf6;">-</span><div class="stat-label">סה"כ כניסות</div></div>
+  </div>
+
   <!-- Top 3 -->
   <div class="admin-grid" style="margin-bottom:20px;">
     <div class="card">
@@ -650,9 +658,31 @@ function calcInsights() {
   ).join('');
 }
 
+async function loadVisits() {
+  try {
+    const snap = await getDocs(collection(db, 'site_stats'));
+    const days = snap.docs.map(d => ({ date: d.id, visits: d.data().visits||0 }));
+    const now = new Date();
+    const today = now.toISOString().split('T')[0];
+    const weekAgo = new Date(now - 7*24*60*60*1000).toISOString().split('T')[0];
+    const monthAgo = new Date(now - 30*24*60*60*1000).toISOString().split('T')[0];
+
+    const visitsDay = days.filter(d=>d.date===today).reduce((s,d)=>s+d.visits,0);
+    const visitsWeek = days.filter(d=>d.date>=weekAgo).reduce((s,d)=>s+d.visits,0);
+    const visitsMonth = days.filter(d=>d.date>=monthAgo).reduce((s,d)=>s+d.visits,0);
+    const visitsTotal = days.reduce((s,d)=>s+d.visits,0);
+
+    document.getElementById('st-visits-day').textContent = visitsDay.toLocaleString();
+    document.getElementById('st-visits-week').textContent = visitsWeek.toLocaleString();
+    document.getElementById('st-visits-month').textContent = visitsMonth.toLocaleString();
+    document.getElementById('st-visits-total').textContent = visitsTotal.toLocaleString();
+  } catch(e) {}
+}
+
 function initStatsTab() {
   renderStatsContent();
   calcInsights();
+  loadVisits();
 }
 
 function showToast(msg){const t=document.getElementById('toast');t.textContent=msg;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),3000);}
