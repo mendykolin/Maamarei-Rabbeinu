@@ -55,6 +55,13 @@ input:checked+.slider{background:#1a3a5c}input:checked+.slider:before{transform:
 .toast{position:fixed;bottom:22px;left:50%;transform:translateX(-50%) translateY(100px);background:#1a3a5c;color:white;padding:12px 22px;border-radius:10px;font-size:14px;font-weight:500;box-shadow:0 8px 32px rgba(0,0,0,0.2);transition:transform 0.3s;z-index:999;border-right:4px solid #e8c840}
 .toast.show{transform:translateX(-50%) translateY(0)}
 @media(max-width:768px){.admin-grid{grid-template-columns:1fr}.stats-row{grid-template-columns:repeat(2,1fr)}}
+.range-btn,.view-btn{padding:6px 14px;border-radius:20px;border:2px solid #e8edf3;background:white;font-family:Heebo,sans-serif;font-size:12px;font-weight:600;color:#8fa3b8;cursor:pointer;transition:all 0.15s;}
+.range-btn.active,.view-btn.active{background:#1a3a5c;color:white;border-color:#1a3a5c;}
+.top-item{display:flex;align-items:center;gap:10px;padding:10px 0;border-bottom:1px solid #f4f7fa;}
+.top-item:last-child{border-bottom:none;}
+.top-rank{font-size:20px;width:28px;text-align:center;}
+.top-title{flex:1;font-size:13px;font-weight:600;color:#1a3a5c;}
+.top-count{font-size:13px;font-weight:700;color:#2a5080;}
 </style></head><body>
 
 <!-- LOGIN GATE -->
@@ -163,13 +170,59 @@ input:checked+.slider{background:#1a3a5c}input:checked+.slider:before{transform:
 </main>
 </div><!-- end tab-manage -->
 
-<!-- TAB: STATS (placeholder) -->
+<!-- TAB: STATS -->
 <div id="tab-stats" style="display:none;">
 <main>
-  <div class="card" style="text-align:center;padding:60px;color:#8fa3b8;">
-    <div style="font-size:48px;margin-bottom:16px;">📊</div>
-    <div style="font-family:'Frank Ruhl Libre',serif;font-size:22px;font-weight:700;color:#1a3a5c;margin-bottom:8px;">סטטיסטיקות</div>
-    <div style="font-size:15px;">בקרוב — נתוני צפיות, הורדות וכניסות לאתר</div>
+  <!-- Top cards -->
+  <div class="stats-row">
+    <div class="stat-card"><span class="stat-num" id="st-total">0</span><div class="stat-label">חוברות</div></div>
+    <div class="stat-card gold"><span class="stat-num" id="st-views">0</span><div class="stat-label">סה"כ צפיות</div></div>
+    <div class="stat-card green"><span class="stat-num" id="st-dl">0</span><div class="stat-label">סה"כ הורדות</div></div>
+    <div class="stat-card red"><span class="stat-num" id="st-paid">0</span><div class="stat-label">בתשלום</div></div>
+  </div>
+
+  <!-- Top 3 -->
+  <div class="admin-grid" style="margin-bottom:20px;">
+    <div class="card">
+      <h3>👁 Top 3 נצפות</h3>
+      <div id="top-views"></div>
+    </div>
+    <div class="card">
+      <h3>⬇️ Top 3 מורדות</h3>
+      <div id="top-downloads"></div>
+    </div>
+  </div>
+
+  <!-- Table / Chart toggle -->
+  <div class="card" style="margin-bottom:20px;">
+    <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px;margin-bottom:16px;">
+      <h3 style="margin:0;">📋 נתונים לפי חוברת</h3>
+      <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
+        <!-- Range filter -->
+        <div style="display:flex;gap:6px;">
+          <button class="range-btn active" data-range="all" onclick="setRange(this)">מאז ומתמיד</button>
+          <button class="range-btn" data-range="month" onclick="setRange(this)">חודש</button>
+          <button class="range-btn" data-range="week" onclick="setRange(this)">שבוע</button>
+          <button class="range-btn" data-range="day" onclick="setRange(this)">היום</button>
+        </div>
+        <!-- View toggle -->
+        <div style="display:flex;gap:6px;">
+          <button class="view-btn active" data-view="table" onclick="setView(this)">📋 טבלה</button>
+          <button class="view-btn" data-view="chart" onclick="setView(this)">📊 גרף</button>
+        </div>
+      </div>
+    </div>
+    <div id="stats-table-wrap"></div>
+    <div id="stats-chart-wrap" style="display:none;"><canvas id="stats-chart" height="300"></canvas></div>
+  </div>
+
+  <!-- AI Insights -->
+  <div class="card">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;">
+      <h3 style="margin:0;">🤖 תובנות AI</h3>
+      <button class="btn btn-primary" onclick="loadInsights()" id="insights-btn" style="padding:8px 20px;font-size:13px;">✨ נתח נתונים</button>
+    </div>
+    <div id="insights-result" style="color:#8fa3b8;font-size:14px;text-align:center;padding:20px 0;">לחץ על "נתח נתונים" לקבלת תובנות</div>
   </div>
 </main>
 </div><!-- end tab-stats -->
@@ -178,7 +231,7 @@ input:checked+.slider{background:#1a3a5c}input:checked+.slider:before{transform:
 
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
-import { getFirestore, collection, doc, setDoc, deleteDoc, onSnapshot, getDoc } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+import { getFirestore, collection, doc, setDoc, deleteDoc, onSnapshot, getDoc, getDocs } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
 const app = initializeApp({
   apiKey:"AIzaSyBLOrM83RtH4VToygfpo2dxG-NcpebcLiI",
@@ -440,6 +493,166 @@ window.resetCat = function() {
   document.getElementById('cat-btn').textContent = '➕ הוסף';
 };
 
+// ===== STATS TAB =====
+let currentRange = 'all';
+let currentView = 'table';
+let chartInstance = null;
+
+window.setRange = function(btn) {
+  document.querySelectorAll('.range-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  currentRange = btn.dataset.range;
+  renderStatsContent();
+};
+
+window.setView = function(btn) {
+  document.querySelectorAll('.view-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  currentView = btn.dataset.view;
+  document.getElementById('stats-table-wrap').style.display = currentView==='table' ? 'block' : 'none';
+  document.getElementById('stats-chart-wrap').style.display = currentView==='chart' ? 'block' : 'none';
+  renderStatsContent();
+};
+
+async function getBookletStats(bookId) {
+  const now = new Date();
+  const today = now.toISOString().split('T')[0];
+  const weekAgo = new Date(now - 7*24*60*60*1000).toISOString().split('T')[0];
+  const monthAgo = new Date(now - 30*24*60*60*1000).toISOString().split('T')[0];
+  const cutoff = currentRange === 'day' ? today : currentRange === 'week' ? weekAgo : monthAgo;
+  try {
+    const snap = await getDocs(collection(db, `booklet_stats/${bookId}/daily`));
+    const days = snap.docs.map(d => ({ date: d.id, ...d.data() }));
+    const filtered = days.filter(d => d.date >= cutoff);
+    return {
+      views: filtered.reduce((s,d) => s+(d.views||0), 0),
+      downloads: filtered.reduce((s,d) => s+(d.downloads||0), 0)
+    };
+  } catch(e) { return null; }
+}
+
+async function renderStatsContent() {
+  // Update top cards
+  document.getElementById('st-total').textContent = books.length;
+  document.getElementById('st-views').textContent = books.reduce((s,b)=>s+(b.views||0),0).toLocaleString();
+  document.getElementById('st-dl').textContent = books.reduce((s,b)=>s+(b.downloads||0),0).toLocaleString();
+  document.getElementById('st-paid').textContent = books.filter(b=>b.price>0).length;
+
+  // Get data per book
+  let data = [];
+  if (currentRange === 'all') {
+    data = books.map(b => ({ title: b.title, views: b.views||0, downloads: b.downloads||0 }));
+  } else {
+    const wrap = document.getElementById('stats-table-wrap');
+    wrap.innerHTML = '<div style="text-align:center;padding:20px;color:#8fa3b8;">⏳ טוען נתונים...</div>';
+    const promises = books.map(async b => {
+      const stats = await getBookletStats(b.id);
+      return { title: b.title, views: stats?.views||0, downloads: stats?.downloads||0 };
+    });
+    data = await Promise.all(promises);
+  }
+
+  data.sort((a,b) => (b.views+b.downloads) - (a.views+a.downloads));
+
+  // Top 3
+  const topV = [...data].sort((a,b)=>b.views-a.views).slice(0,3);
+  const topD = [...data].sort((a,b)=>b.downloads-a.downloads).slice(0,3);
+  const medals = ['🥇','🥈','🥉'];
+  document.getElementById('top-views').innerHTML = topV.map((b,i)=>`
+    <div class="top-item"><span class="top-rank">${medals[i]}</span><span class="top-title">${b.title}</span><span class="top-count">👁 ${b.views}</span></div>
+  `).join('');
+  document.getElementById('top-downloads').innerHTML = topD.map((b,i)=>`
+    <div class="top-item"><span class="top-rank">${medals[i]}</span><span class="top-title">${b.title}</span><span class="top-count">⬇️ ${b.downloads}</span></div>
+  `).join('');
+
+  if (currentView === 'table') {
+    document.getElementById('stats-table-wrap').innerHTML = `
+      <table class="tbl">
+        <thead><tr><th>#</th><th>שם החוברת</th><th>👁 צפיות</th><th>⬇️ הורדות</th></tr></thead>
+        <tbody>${data.map((b,i)=>`
+          <tr>
+            <td style="color:#8fa3b8;font-size:12px;">${i+1}</td>
+            <td><strong>${b.title}</strong></td>
+            <td>${b.views.toLocaleString()}</td>
+            <td>${b.downloads.toLocaleString()}</td>
+          </tr>
+        `).join('')}</tbody>
+      </table>`;
+  } else {
+    renderChart(data.slice(0,10));
+  }
+}
+
+function renderChart(data) {
+  const canvas = document.getElementById('stats-chart');
+  if (chartInstance) chartInstance.destroy();
+  if (!window.Chart) {
+    const s = document.createElement('script');
+    s.src = 'https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.0/chart.umd.min.js';
+    s.onload = () => buildChart(data, canvas);
+    document.head.appendChild(s);
+  } else {
+    buildChart(data, canvas);
+  }
+}
+
+function buildChart(data, canvas) {
+  chartInstance = new Chart(canvas, {
+    type: 'bar',
+    data: {
+      labels: data.map(b => b.title.length > 15 ? b.title.slice(0,15)+'...' : b.title),
+      datasets: [
+        { label: 'צפיות', data: data.map(b=>b.views), backgroundColor: 'rgba(26,58,92,0.7)', borderRadius: 6 },
+        { label: 'הורדות', data: data.map(b=>b.downloads), backgroundColor: 'rgba(232,200,64,0.8)', borderRadius: 6 }
+      ]
+    },
+    options: {
+      responsive: true, plugins: { legend: { position: 'top' } },
+      scales: { x: { ticks: { font: { family: 'Heebo' } } }, y: { beginAtZero: true } }
+    }
+  });
+}
+
+window.loadInsights = async function() {
+  const btn = document.getElementById('insights-btn');
+  const result = document.getElementById('insights-result');
+  btn.textContent = '⏳ מנתח...';
+  btn.disabled = true;
+  result.innerHTML = '<div style="color:#8fa3b8;">מנתח נתונים עם AI...</div>';
+
+  const summary = books.slice(0,20).map(b =>
+    `${b.title}: ${b.views||0} צפיות, ${b.downloads||0} הורדות, קטגוריות: ${(Array.isArray(b.categories)?b.categories:[b.category||'']).join(', ')}`
+  ).join('\n');
+
+  try {
+    const res = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        model: 'claude-sonnet-4-20250514',
+        max_tokens: 1000,
+        messages: [{
+          role: 'user',
+          content: `אתה מנתח נתונים של אתר ספריית חוברות Torah בעברית. הנה נתוני הצפיות וההורדות:\n\n${summary}\n\nתן 4-5 תובנות קצרות ומעשיות בעברית. כל תובנה בשורה נפרדת עם אמוג'י מתאים. התמקד במה עובד, מה כדאי לקדם, ומה מעניין.`
+        }]
+      })
+    });
+    const data = await res.json();
+    const text = data.content?.[0]?.text || 'לא הצלחתי לנתח';
+    result.innerHTML = text.split('\n').filter(l=>l.trim()).map(l=>
+      `<div style="padding:10px 14px;margin-bottom:8px;background:#f4f7fa;border-radius:10px;border-right:3px solid #1a3a5c;font-size:14px;color:#1a2e42;line-height:1.6;">${l}</div>`
+    ).join('');
+  } catch(e) {
+    result.innerHTML = '<div style="color:#ef4444;">שגיאה בניתוח. נסה שוב.</div>';
+  }
+  btn.textContent = '✨ נתח נתונים';
+  btn.disabled = false;
+};
+
+function initStatsTab() {
+  renderStatsContent();
+}
+
 function showToast(msg){const t=document.getElementById('toast');t.textContent=msg;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),3000);}
 
 window.switchTab = function(tab) {
@@ -451,6 +664,7 @@ window.switchTab = function(tab) {
   document.getElementById('tab-stats-btn').style.cssText = tab==='stats'
     ? 'padding:14px 24px;border:none;background:none;font-family:Heebo,sans-serif;font-size:15px;font-weight:700;color:#1a3a5c;cursor:pointer;border-bottom:3px solid #1a3a5c;margin-bottom:-2px;'
     : 'padding:14px 24px;border:none;background:none;font-family:Heebo,sans-serif;font-size:15px;font-weight:600;color:#8fa3b8;cursor:pointer;border-bottom:3px solid transparent;margin-bottom:-2px;';
+  if (tab === 'stats') initStatsTab();
 };
 
 
