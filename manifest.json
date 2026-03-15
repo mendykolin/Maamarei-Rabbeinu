@@ -1,0 +1,26 @@
+{
+  "name": "סיכומים במאמרי רבינו",
+  "short_name": "מאמרי רבינו",
+  "description": "מאמרי הרבי מסוכמים בשפה ברורה ופשוטה",
+  "start_url": "/Maamarei-Rabbeinu/",
+  "display": "standalone",
+  "background_color": "#1a3a5c",
+  "theme_color": "#1a3a5c",
+  "orientation": "portrait",
+  "lang": "he",
+  "dir": "rtl",
+  "icons": [
+    {
+      "src": "icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
+}
