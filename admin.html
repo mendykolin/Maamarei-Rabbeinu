@@ -216,13 +216,10 @@ input:checked+.slider{background:#1a3a5c}input:checked+.slider:before{transform:
     <div id="stats-chart-wrap" style="display:none;"><canvas id="stats-chart" height="300"></canvas></div>
   </div>
 
-  <!-- AI Insights -->
+  <!-- Smart Insights -->
   <div class="card">
-    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;">
-      <h3 style="margin:0;">🤖 תובנות AI</h3>
-      <button class="btn btn-primary" onclick="loadInsights()" id="insights-btn" style="padding:8px 20px;font-size:13px;">✨ נתח נתונים</button>
-    </div>
-    <div id="insights-result" style="color:#8fa3b8;font-size:14px;text-align:center;padding:20px 0;">לחץ על "נתח נתונים" לקבלת תובנות</div>
+    <h3>💡 תובנות</h3>
+    <div id="insights-result"></div>
   </div>
 </main>
 </div><!-- end tab-stats -->
@@ -613,44 +610,49 @@ function buildChart(data, canvas) {
   });
 }
 
-window.loadInsights = async function() {
-  const btn = document.getElementById('insights-btn');
+function calcInsights() {
   const result = document.getElementById('insights-result');
-  btn.textContent = '⏳ מנתח...';
-  btn.disabled = true;
-  result.innerHTML = '<div style="color:#8fa3b8;">מנתח נתונים עם AI...</div>';
+  if (!books.length) { result.innerHTML = '<div style="color:#8fa3b8;text-align:center;padding:20px;">אין נתונים עדיין</div>'; return; }
 
-  const summary = books.slice(0,20).map(b =>
-    `${b.title}: ${b.views||0} צפיות, ${b.downloads||0} הורדות, קטגוריות: ${(Array.isArray(b.categories)?b.categories:[b.category||'']).join(', ')}`
-  ).join('\n');
+  const insights = [];
+  const sorted = [...books].sort((a,b)=>(b.views||0)-(a.views||0));
+  const totalViews = books.reduce((s,b)=>s+(b.views||0),0);
+  const totalDl = books.reduce((s,b)=>s+(b.downloads||0),0);
 
-  try {
-    const res = await fetch('https://api.anthropic.com/v1/messages', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        model: 'claude-sonnet-4-20250514',
-        max_tokens: 1000,
-        messages: [{
-          role: 'user',
-          content: `אתה מנתח נתונים של אתר ספריית חוברות Torah בעברית. הנה נתוני הצפיות וההורדות:\n\n${summary}\n\nתן 4-5 תובנות קצרות ומעשיות בעברית. כל תובנה בשורה נפרדת עם אמוג'י מתאים. התמקד במה עובד, מה כדאי לקדם, ומה מעניין.`
-        }]
-      })
-    });
-    const data = await res.json();
-    const text = data.content?.[0]?.text || 'לא הצלחתי לנתח';
-    result.innerHTML = text.split('\n').filter(l=>l.trim()).map(l=>
-      `<div style="padding:10px 14px;margin-bottom:8px;background:#f4f7fa;border-radius:10px;border-right:3px solid #1a3a5c;font-size:14px;color:#1a2e42;line-height:1.6;">${l}</div>`
-    ).join('');
-  } catch(e) {
-    result.innerHTML = '<div style="color:#ef4444;">שגיאה בניתוח. נסה שוב.</div>';
+  if (sorted[0]?.views > 0)
+    insights.push(`🏆 החוברת הכי פופולרית: <strong>${sorted[0].title}</strong> עם ${sorted[0].views} צפיות`);
+
+  const bestRatio = books.filter(b=>(b.views||0)>0)
+    .map(b=>({...b, ratio: (b.downloads||0)/(b.views||0)}))
+    .sort((a,b)=>b.ratio-a.ratio)[0];
+  if (bestRatio?.ratio > 0)
+    insights.push(`⬇️ יחס הורדות/צפיות הכי גבוה: <strong>${bestRatio.title}</strong> (${Math.round(bestRatio.ratio*100)}% מהצופים מורידים)`);
+
+  const catCount = {};
+  books.forEach(b => {
+    const cats = Array.isArray(b.categories) ? b.categories : (b.category ? [b.category] : []);
+    cats.forEach(c => { catCount[c] = (catCount[c]||0) + (b.views||0); });
+  });
+  const topCat = Object.entries(catCount).sort((a,b)=>b[1]-a[1])[0];
+  if (topCat) insights.push(`📂 הקטגוריה הכי פופולרית: <strong>${topCat[0]}</strong> עם ${topCat[1]} צפיות`);
+
+  const neverViewed = books.filter(b=>!(b.views>0));
+  if (neverViewed.length > 0)
+    insights.push(`👀 ${neverViewed.length} חוברות עדיין לא קיבלו אף צפייה — כדאי לקדם אותן`);
+
+  if (totalViews > 0) {
+    const pct = Math.round(totalDl/totalViews*100);
+    insights.push(`📊 ${pct}% מהצופים באתר גם מורידים את החוברת`);
   }
-  btn.textContent = '✨ נתח נתונים';
-  btn.disabled = false;
-};
+
+  result.innerHTML = insights.map(i =>
+    `<div style="padding:10px 14px;margin-bottom:8px;background:#f4f7fa;border-radius:10px;border-right:3px solid #1a3a5c;font-size:14px;color:#1a2e42;line-height:1.6;">${i}</div>`
+  ).join('');
+}
 
 function initStatsTab() {
   renderStatsContent();
+  calcInsights();
 }
 
 function showToast(msg){const t=document.getElementById('toast');t.textContent=msg;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),3000);}
