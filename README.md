@@ -1,2 +1,7 @@
-# Maamarei-Rabbeinu
-The Rebbe's maamarim summarized in clear, simple language – free to read and download
+# סיכומים במאמרי רבינו
+
+![לוגו](logo.png)
+
+מאמרי הרבי מסוכמים בשפה ברורה ופשוטה
+
+🔗 [כניסה לאתר](https://mendykolin.github.io/Maamarei-Rabbeinu)
