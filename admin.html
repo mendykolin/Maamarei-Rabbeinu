@@ -189,6 +189,15 @@ input:checked+.slider{background:#1a3a5c}input:checked+.slider:before{transform:
     <div class="stat-card" style="border-top-color:#8b5cf6;"><span class="stat-num" id="st-visits-total" style="color:#8b5cf6;">-</span><div class="stat-label">סה"כ כניסות</div></div>
   </div>
 
+  <!-- Save history button -->
+  <div class="card" style="margin-bottom:20px;padding:16px 22px;display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;">
+    <div>
+      <div style="font-family:'Frank Ruhl Libre',serif;font-size:15px;font-weight:700;color:#1a3a5c;">📦 שמור היסטוריה של חוברות קיימות</div>
+      <div style="font-size:12px;color:#8fa3b8;margin-top:4px;">שומר את סה"כ הצפיות/הורדות הנוכחיות של כל חוברת תחת תאריך היום — פעולה חד פעמית</div>
+    </div>
+    <button class="btn btn-primary" onclick="saveAllHistory()" id="save-history-btn" style="padding:10px 20px;font-size:13px;white-space:nowrap;">💾 שמור עכשיו</button>
+  </div>
+
   <!-- Top 3 -->
   <div class="admin-grid" style="margin-bottom:20px;">
     <div class="card">
@@ -236,7 +245,7 @@ input:checked+.slider{background:#1a3a5c}input:checked+.slider:before{transform:
 
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
-import { getFirestore, collection, doc, setDoc, deleteDoc, onSnapshot, getDoc, getDocs } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+import { getFirestore, collection, doc, setDoc, deleteDoc, onSnapshot, getDoc, getDocs, increment } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
 const app = initializeApp({
   apiKey:"AIzaSyBLOrM83RtH4VToygfpo2dxG-NcpebcLiI",
@@ -658,7 +667,30 @@ function calcInsights() {
   ).join('');
 }
 
-async function loadVisits() {
+window.saveAllHistory = async function() {
+  const btn = document.getElementById('save-history-btn');
+  btn.textContent = '⏳ שומר...';
+  btn.disabled = true;
+  const today = new Date().toISOString().split('T')[0];
+  let saved = 0;
+  try {
+    for (const b of books) {
+      if ((b.views||0) > 0 || (b.downloads||0) > 0) {
+        await setDoc(doc(db, `booklet_stats/${b.id}/daily`, today), {
+          views: b.views||0,
+          downloads: b.downloads||0
+        }, { merge: true });
+        saved++;
+      }
+    }
+    showToast(`✅ נשמר היסטוריה ל-${saved} חוברות`);
+    btn.textContent = '✅ נשמר!';
+  } catch(e) {
+    showToast('❌ שגיאה בשמירה');
+    btn.textContent = '💾 שמור עכשיו';
+    btn.disabled = false;
+  }
+};
   try {
     const snap = await getDocs(collection(db, 'site_stats'));
     const days = snap.docs.map(d => ({ date: d.id, visits: d.data().visits||0 }));
