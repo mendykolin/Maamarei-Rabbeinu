@@ -187,6 +187,15 @@ input:checked+.slider{background:#1a3a5c}input:checked+.slider:before{transform:
     <div class="stat-card" style="border-top-color:#8b5cf6;"><span class="stat-num" id="st-visits-range" style="color:#8b5cf6;">-</span><div class="stat-label">כניסות לאתר</div></div>
   </div>
 
+  <!-- Device cards -->
+  <div class="stats-row" style="margin-bottom:20px;">
+    <div class="stat-card" style="border-top-color:#06b6d4;"><span class="stat-num" id="st-device-desktop" style="color:#06b6d4;">-</span><div class="stat-label">💻 מחשב</div></div>
+    <div class="stat-card" style="border-top-color:#06b6d4;"><span class="stat-num" id="st-device-mobile" style="color:#06b6d4;">-</span><div class="stat-label">📱 נייד</div></div>
+    <div class="stat-card" style="border-top-color:#06b6d4;"><span class="stat-num" id="st-device-pwa" style="color:#06b6d4;">-</span><div class="stat-label">📲 אפליקציה</div></div>
+    <div class="stat-card" style="border-top-color:#06b6d4;"><span class="stat-num" id="st-device-pct" style="color:#06b6d4;">-</span><div class="stat-label">% נייד מסה"כ</div></div>
+    <div class="stat-card" style="border-top-color:#f59e0b;"><span class="stat-num" id="st-pwa-installs" style="color:#f59e0b;">-</span><div class="stat-label">⬇️ התקנות PWA</div></div>
+  </div>
+
   <!-- Top 3 -->
   <div class="admin-grid" style="margin-bottom:20px;margin-top:20px;">
     <div class="card">
@@ -740,20 +749,38 @@ window.saveAllHistory = async function() {
 async function loadVisits() {
   try {
     const snap = await getDocs(collection(db, 'site_stats'));
-    const days = snap.docs.map(d => ({ date: d.id, visits: d.data().visits||0 }));
+    const days = snap.docs.map(d => ({ date: d.id, ...d.data() }));
     const now = new Date();
     const today = now.toISOString().split('T')[0];
     const weekAgo = new Date(now - 7*24*60*60*1000).toISOString().split('T')[0];
     const monthAgo = new Date(now - 30*24*60*60*1000).toISOString().split('T')[0];
 
-    let visits;
-    if (currentRange === 'day') visits = days.filter(d=>d.date===today).reduce((s,d)=>s+d.visits,0);
-    else if (currentRange === 'week') visits = days.filter(d=>d.date>=weekAgo).reduce((s,d)=>s+d.visits,0);
-    else if (currentRange === 'month') visits = days.filter(d=>d.date>=monthAgo).reduce((s,d)=>s+d.visits,0);
-    else visits = days.reduce((s,d)=>s+d.visits,0);
+    let filtered;
+    if (currentRange === 'day') filtered = days.filter(d=>d.date===today);
+    else if (currentRange === 'week') filtered = days.filter(d=>d.date>=weekAgo);
+    else if (currentRange === 'month') filtered = days.filter(d=>d.date>=monthAgo);
+    else filtered = days;
 
-    const el = document.getElementById('st-visits-range');
-    if (el) el.textContent = visits.toLocaleString();
+    const visits = filtered.reduce((s,d)=>s+(d.visits||0),0);
+    const desktop = filtered.reduce((s,d)=>s+(d.device_desktop||0),0);
+    const mobile = filtered.reduce((s,d)=>s+(d.device_mobile||0),0);
+    const pwa = filtered.reduce((s,d)=>s+(d.device_pwa||0),0);
+    const total = desktop + mobile + pwa;
+    const mobilePct = total > 0 ? Math.round((mobile+pwa)/total*100) : 0;
+
+    const set = (id, val) => { const el = document.getElementById(id); if(el) el.textContent = val; };
+    set('st-visits-range', visits.toLocaleString());
+    set('st-device-desktop', desktop.toLocaleString());
+    set('st-device-mobile', mobile.toLocaleString());
+    set('st-device-pwa', pwa.toLocaleString());
+    set('st-device-pct', mobilePct + '%');
+
+    // Load PWA installs (global count, not range-specific)
+    try {
+      const statsSnap = await getDoc(doc(db, 'config', 'stats'));
+      const installs = statsSnap.exists() ? (statsSnap.data().pwa_installs || 0) : 0;
+      set('st-pwa-installs', installs.toLocaleString());
+    } catch(e) {}
   } catch(e) {}
 }
 
