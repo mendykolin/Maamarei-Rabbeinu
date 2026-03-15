@@ -14,6 +14,23 @@
   if ('serviceWorker' in navigator) {
     navigator.serviceWorker.register('sw.js').catch(() => {});
   }
+  // Track PWA installs
+  window.addEventListener('appinstalled', async () => {
+    try {
+      const { initializeApp, getApps } = await import("https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js");
+      const { getFirestore, doc, setDoc, increment } = await import("https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js");
+      const app = getApps().length ? getApps()[0] : initializeApp({
+        apiKey:"AIzaSyBLOrM83RtH4VToygfpo2dxG-NcpebcLiI",
+        authDomain:"maamrei-rabenu.firebaseapp.com",
+        projectId:"maamrei-rabenu",
+        storageBucket:"maamrei-rabenu.firebasestorage.app",
+        messagingSenderId:"484133741429",
+        appId:"1:484133741429:web:f9a716cc670965048be93c"
+      });
+      const db = getFirestore(app);
+      await setDoc(doc(db, 'config', 'stats'), { pwa_installs: increment(1) }, { merge: true });
+    } catch(e) {}
+  });
 </script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Frank+Ruhl+Libre:wght@300;400;500;700;900&family=Heebo:wght@300;400;500;700;800&display=swap" rel="stylesheet">
@@ -247,10 +264,16 @@ let activeTopic = 'הכל';
 
 // ===== INIT =====
 async function init() {
-  // Count visit
+  // Count visit + device
   try {
     const today = new Date().toISOString().split('T')[0];
-    await setDoc(doc(db, 'site_stats', today), { visits: increment(1) }, { merge: true });
+    const isMobile = /Mobi|Android|iPhone|iPad/i.test(navigator.userAgent);
+    const isPWA = window.matchMedia('(display-mode: standalone)').matches;
+    const device = isPWA ? 'pwa' : isMobile ? 'mobile' : 'desktop';
+    await setDoc(doc(db, 'site_stats', today), {
+      visits: increment(1),
+      [`device_${device}`]: increment(1)
+    }, { merge: true });
   } catch(e) {}
 
   // Load settings
