@@ -217,11 +217,8 @@ input:checked+.slider{background:#1a3a5c}input:checked+.slider:before{transform:
         <button class="view-btn" data-view="chart" onclick="setView(this)">📊 גרף חוברות</button>
         <button class="view-btn" data-view="timeline-activity" onclick="setView(this)">📈 צפיות/הורדות</button>
         <button class="view-btn" data-view="timeline-visits" onclick="setView(this)">📈 כניסות</button>
+        <button class="view-btn" data-view="timeline-pwa" onclick="setView(this)">📲 התקנות</button>
       </div>
-    </div>
-    <div id="timeline-days-wrap" style="display:none;margin-bottom:12px;gap:6px;">
-      <button class="range-btn active" data-days="7" onclick="setTimelineDays(this,7)">7 ימים</button>
-      <button class="range-btn" data-days="30" onclick="setTimelineDays(this,30)">30 ימים</button>
     </div>
     <div id="stats-table-wrap"></div>
     <div id="stats-chart-wrap" style="display:none;"><canvas id="stats-chart" height="300"></canvas></div>
@@ -524,6 +521,17 @@ let currentRange = 'all';
 let currentView = 'table';
 let chartInstance = null;
 
+function rangeToDays(range) {
+  return range === 'day' ? 1 : range === 'week' ? 7 : range === 'month' ? 30 : 365;
+}
+
+function refreshTimelineChart() {
+  const days = rangeToDays(currentRange);
+  if (currentView === 'timeline-activity') loadActivityChart(days);
+  else if (currentView === 'timeline-visits') loadVisitsChart(days);
+  else if (currentView === 'timeline-pwa') loadPwaChart(days);
+}
+
 window.setRange = function(btn) {
   document.querySelectorAll('.range-btn').forEach(b => b.classList.remove('active'));
   btn.classList.add('active');
@@ -531,6 +539,7 @@ window.setRange = function(btn) {
   renderStatsContent();
   loadVisits();
   calcInsights();
+  if (currentView && currentView.startsWith('timeline')) refreshTimelineChart();
 };
 
 window.setView = function(btn) {
@@ -540,25 +549,13 @@ window.setView = function(btn) {
   const tableWrap = document.getElementById('stats-table-wrap');
   const chartWrap = document.getElementById('stats-chart-wrap');
   const timelineWrap = document.getElementById('stats-timeline-wrap');
-  const daysWrap = document.getElementById('timeline-days-wrap');
 
   tableWrap.style.display = currentView === 'table' ? 'block' : 'none';
   chartWrap.style.display = currentView === 'chart' ? 'block' : 'none';
-  timelineWrap.style.display = (currentView === 'timeline-activity' || currentView === 'timeline-visits') ? 'block' : 'none';
-  daysWrap.style.display = (currentView === 'timeline-activity' || currentView === 'timeline-visits') ? 'flex' : 'none';
+  timelineWrap.style.display = currentView.startsWith('timeline') ? 'block' : 'none';
 
   if (currentView === 'table' || currentView === 'chart') renderStatsContent();
-  else if (currentView === 'timeline-activity') loadActivityChart(7);
-  else if (currentView === 'timeline-visits') loadVisitsChart(7);
-};
-
-let currentTimelineDays = 7;
-window.setTimelineDays = async function(btn, days) {
-  document.querySelectorAll('#timeline-days-wrap .range-btn').forEach(b => b.classList.remove('active'));
-  btn.classList.add('active');
-  currentTimelineDays = days;
-  if (currentView === 'timeline-activity') await loadActivityChart(days);
-  else if (currentView === 'timeline-visits') await loadVisitsChart(days);
+  else refreshTimelineChart();
 };
 
 async function getBookletStats(bookId) {
@@ -702,6 +699,7 @@ window.resetAllStats = async function() {
 // ===== TIMELINE CHARTS =====
 let timelineChartInstance = null;
 let cachedVisitsData = null;
+let cachedPwaData = null;
 let cachedBookletData = {}; // bookletId -> [{date, views, downloads}]
 let selectedBooklets = new Set();
 let currentTimelineType = null;
@@ -738,8 +736,12 @@ async function preloadTimelineData() {
     try {
       const snap = await getDocs(collection(db, 'site_stats'));
       cachedVisitsData = {};
-      snap.docs.forEach(d => { cachedVisitsData[d.id] = d.data().visits || 0; });
-    } catch(e) { cachedVisitsData = {}; }
+      cachedPwaData = {};
+      snap.docs.forEach(d => {
+        cachedVisitsData[d.id] = d.data().visits || 0;
+        cachedPwaData[d.id] = d.data().device_pwa || 0;
+      });
+    } catch(e) { cachedVisitsData = {}; cachedPwaData = {}; }
   }
   // Load booklet daily stats
   for (const b of books) {
@@ -771,6 +773,14 @@ function renderTimelineChart(type, days) {
       borderColor: '#8b5cf6',
       backgroundColor: 'rgba(139,92,246,0.1)',
       tension: 0.3, fill: true, pointRadius: 4, pointBackgroundColor: '#8b5cf6'
+    }];
+  } else if (type === 'pwa') {
+    datasets = [{
+      label: 'כניסות דרך אפליקציה',
+      data: dates.map(d => cachedPwaData?.[d] || 0),
+      borderColor: '#f59e0b',
+      backgroundColor: 'rgba(245,158,11,0.1)',
+      tension: 0.3, fill: true, pointRadius: 4, pointBackgroundColor: '#f59e0b'
     }];
   } else {
     // activity: show selected booklets or all aggregated
@@ -858,6 +868,14 @@ async function loadActivityChart(days) {
   const wrap = document.getElementById('booklet-selector-wrap');
   if (wrap) wrap.style.display = 'block';
   renderTimelineChart('activity', days);
+}
+
+async function loadPwaChart(days) {
+  await ensureChart();
+  await preloadTimelineData();
+  const wrap = document.getElementById('booklet-selector-wrap');
+  if (wrap) wrap.style.display = 'none';
+  renderTimelineChart('pwa', days);
 }
 
 window.setChartDays = async function(btn, days, chartId) {
@@ -1027,6 +1045,7 @@ async function loadVisits() {
 
 function initStatsTab() {
   cachedVisitsData = null;
+  cachedPwaData = null;
   cachedBookletData = {};
   selectedBooklets = new Set();
   renderStatsContent();
