@@ -816,6 +816,8 @@ window.setChartDays = async function(btn, days, chartId) {
   if (chartId === 'visits-chart') await loadVisitsChart(days);
   else await loadActivityChart(days);
 };
+
+async function calcInsights() {
   const result = document.getElementById('insights-result');
   if (!books.length) { result.innerHTML = '<div style="color:#8fa3b8;text-align:center;padding:20px;">אין נתונים עדיין</div>'; return; }
 
