@@ -661,8 +661,8 @@ window.resetAllStats = async function() {
     for (const d of siteSnap.docs) await deleteDoc(d.ref);
 
     showToast('✅ כל הנתונים אופסו בהצלחה!');
-    btn.textContent = '✅ אופס!';
-    setTimeout(() => initStatsTab(), 1000);
+    // Remove the reset button card
+    btn.closest('.card').remove();
   } catch(e) {
     showToast('❌ שגיאה באיפוס');
     btn.textContent = '🗑️ אפס הכל';
