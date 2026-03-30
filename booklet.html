@@ -52,7 +52,7 @@
 
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
-import { getFirestore, doc, getDoc, updateDoc } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+import { getFirestore, doc, getDoc, updateDoc, setDoc, increment } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 import { getAnalytics, logEvent } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-analytics.js";
 
 const app = initializeApp({
@@ -65,10 +65,14 @@ const app = initializeApp({
   measurementId: "G-HCM33QST5Q"
 });
 const db = getFirestore(app);
-const analytics = getAnalytics(app);
+let analytics = null;
+try { analytics = getAnalytics(app); } catch(e) {}
 
 // Get booklet ID from URL
 const id = new URLSearchParams(window.location.search).get('id');
+
+// Track if came from index (to avoid double counting)
+const fromIndex = document.referrer.includes('index.html') || document.referrer.endsWith('/Maamarei-Rabbeinu/') || document.referrer.endsWith('/Maamarei-Rabbeinu');
 
 async function load() {
   if (!id) { showError('לא נמצא מזהה חוברת'); return; }
@@ -77,6 +81,21 @@ async function load() {
   if (!snap.exists()) { showError('החוברת לא נמצאה'); return; }
 
   const b = { id: snap.id, ...snap.data() };
+
+  // Count view only if came via direct link (not from index which already counted)
+  if (!fromIndex) {
+    try {
+      const today = new Date().toLocaleDateString('sv-SE', {timeZone:'Asia/Jerusalem'});
+      await updateDoc(doc(db, 'booklets', id), { views: (b.views||0) + 1 });
+      await setDoc(doc(db, `booklet_stats/${id}/daily`, today), { views: increment(1) }, { merge: true });
+      // Also count site visit
+      const isMobile = /Mobi|Android|iPhone|iPad/i.test(navigator.userAgent);
+      const isPWA = window.matchMedia('(display-mode: standalone)').matches;
+      const device = isPWA ? 'pwa' : isMobile ? 'mobile' : 'desktop';
+      await setDoc(doc(db, 'site_stats', today), { visits: increment(1), [`device_${device}`]: increment(1) }, { merge: true });
+      try { if(analytics) logEvent(analytics, 'view_booklet', { booklet_title: b.title, booklet_id: id }); } catch(e) {}
+    } catch(e) {}
+  }
 
   // Update page title
   document.title = `${b.title} – סיכומים במאמרי רבינו`;
@@ -96,6 +115,9 @@ async function load() {
   const pdfSection = b.pdfUrl
     ? `<div style="margin-top:24px;">
         <iframe src="${b.pdfUrl}" style="width:100%;height:80vh;min-height:400px;border:none;border-radius:16px;box-shadow:0 4px 24px rgba(0,0,0,0.1);" allowfullscreen></iframe>
+        <div style="margin-top:12px;text-align:center;">
+          <button onclick="countAndDownload('${b.id}','${b.pdfUrl}')" style="background:#1a3a5c;color:white;border:none;padding:12px 28px;border-radius:12px;font-size:15px;font-weight:700;cursor:pointer;font-family:Heebo,sans-serif;display:inline-flex;align-items:center;gap:8px;">⬇ הורדה / פתיחה בדפדפן</button>
+        </div>
       </div>`
     : `<div style="background:#f4f7fa;border-radius:16px;padding:40px;text-align:center;color:#8fa3b8;margin-top:24px;font-size:15px;">📋 קובץ PDF עדיין לא הועלה לחוברת זו</div>`;
 
@@ -134,6 +156,18 @@ async function load() {
 function showError(msg) {
   document.getElementById('main').innerHTML = `<div class="loading">${msg}</div>`;
 }
+
+window.countAndDownload = async function(bookletId, pdfUrl) {
+  try {
+    const today = new Date().toLocaleDateString('sv-SE', {timeZone:'Asia/Jerusalem'});
+    const snap = await getDoc(doc(db, 'booklets', bookletId));
+    const downloads = snap.exists() ? (snap.data().downloads||0) : 0;
+    await updateDoc(doc(db, 'booklets', bookletId), { downloads: downloads + 1 });
+    await setDoc(doc(db, `booklet_stats/${bookletId}/daily`, today), { downloads: increment(1) }, { merge: true });
+    try { if(analytics) logEvent(analytics, 'download_booklet', { booklet_id: bookletId }); } catch(e) {}
+  } catch(e) {}
+  window.open(pdfUrl.replace('/preview', '/view'), '_blank');
+};
 
 load();
 </script>
