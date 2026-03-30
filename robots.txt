@@ -1,0 +1,4 @@
+User-agent: *
+Allow: /
+
+Sitemap: https://mendykolin.github.io/Maamarei-Rabbeinu/sitemap.xml
